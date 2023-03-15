@@ -3,7 +3,7 @@
  * @author Aming
  * @name HumanTG
  * @origin 官方
- * @version 1.0.0
+ * @version 1.0.1
  * @description 适配器
  * @adapter true
  * @public false
@@ -62,7 +62,7 @@ module.exports = () => {
         /* 保存管理员信息 ，如果需要手动设置管理员 注释这句*/
         HumanTgDb.set('admin', loginUserInfo.id.toString());
         // console.log(loginUserInfo);
-        
+
         let startLog = `Hello ${loginUserInfo.firstName || loginUserInfo.username}\n`;
         startLog += `Bncr 启动成功.....\n`;
         startLog += sysMethod.getTime('yyyy-MM-dd hh:mm:ss') + '\n';
@@ -73,19 +73,23 @@ module.exports = () => {
 
         /* 监听消息 */
         client.addEventHandler(async event => {
-            const message = event.message;
+
             /* 空消息拒收 */
-            if (!message.text) return;
+            if (!event.message.text) return;
+            const message = event.message;
             // console.log('className',message.peerId.className);
             // console.log('userId',message.peerId.userId);
             // console.log('channelId',message.peerId.channelId);
-            // console.log('message',message);
+            // console.log('message', message);
             const senderInfo = await message.getSender();
             /* bot消息拒收 */
             if (senderInfo && senderInfo.bot) return;
-
+            // console.log('senderInfo',senderInfo);
+            // console.log('friendId', message?.peerId?.userId);
+            // console.log('friendId2', message?.peerId?.userId.toString());
             const msgInfo = {
                 userId: (senderInfo && senderInfo.id && senderInfo.id.toString()) || '',
+                friendId: message?.peerId?.userId?.toString() || '',
                 userName: senderInfo && (senderInfo.username || senderInfo.firstName || ''),
                 groupId: event.isPrivate ? '0' : message.chatId.toString() || '0',
                 groupName: event.isPrivate ? '' : message.chat.title || '',
@@ -96,7 +100,6 @@ module.exports = () => {
         }, new NewMessage());
 
         HumanTG.reply = async function (replyInfo) {
-            // console.log('replyInfo',replyInfo);
             try {
                 let sendRes = null;
                 let sendID = +replyInfo.groupId || +replyInfo.userId;
@@ -119,14 +122,20 @@ module.exports = () => {
                         replyTo: +replyInfo.toMsgId,
                     });
                 } else if (replyInfo.type === 'image') {
+                    if (replyInfo.userId === loginUserInfo.id.toString())
+                        sendID = this.msgInfo.friendId || sendID;
                     sendRes = await client.sendMessage(sendID, {
-                        file:replyInfo.msg,
+                        message: replyInfo?.msg || '',
+                        file: replyInfo.path,
                         replyTo: +replyInfo.toMsgId,
-                        forceDocument:false
+                        forceDocument: false
                     });
                 } else if (replyInfo.type === 'video') {
+                    if (replyInfo.userId === loginUserInfo.id.toString())
+                        sendID = this.msgInfo.friendId || sendID;
                     sendRes = await client.sendMessage(sendID, {
-                        file: replyInfo.msg,
+                        message: replyInfo?.msg || '',
+                        file: replyInfo.path,
                         replyTo: +replyInfo.toMsgId,
                     });
                 }
@@ -136,6 +145,7 @@ module.exports = () => {
             }
         };
         HumanTG.delMsg = async function (msgidArr) {
+            // console.log(this.msgInfo);
             let delChatId = +this.msgInfo.groupId || +this.msgInfo.userId;
             if (this.msgInfo.userId === loginUserInfo.id.toString()) {
                 for (const e of msgidArr) {
