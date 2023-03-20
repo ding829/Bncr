@@ -144,6 +144,28 @@ module.exports = () => {
                 console.error('HumanTG发送消息失败', e);
             }
         };
+        HumanTG.Bridge = {
+            editImage: async function (replyInfo) {
+                if (Object.prototype.toString.call(replyInfo) === '[object Object]') {
+                    let sendID = +replyInfo.groupId || +replyInfo.userId;
+                    if (replyInfo.type === 'image') {
+                        /* 编辑消息 */
+                        try {
+                            sendRes = await client.editMessage(sendID, {
+                                message: +replyInfo.msgId,
+                                text: replyInfo.msg,
+                                file: replyInfo.path,
+                                forceDocument: false
+                            });
+                            return (sendRes && `${sendRes.id}`) || '';
+                        } catch (e) {
+                            console.log('编辑失败', `{e}`);
+                            return;
+                        }
+                    }
+                }
+            }
+        };
         HumanTG.delMsg = async function (msgidArr) {
             // console.log(this.msgInfo);
             let delChatId = +this.msgInfo.groupId || +this.msgInfo.userId;
