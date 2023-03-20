@@ -159,7 +159,7 @@ module.exports = () => {
                             });
                             return (sendRes && `${sendRes.id}`) || '';
                         } catch (e) {
-                            console.log('编辑失败', `{e}`);
+                            console.log('编辑失败', e);
                             return;
                         }
                     }
